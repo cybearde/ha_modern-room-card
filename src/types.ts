@@ -23,14 +23,16 @@ export interface RoomCardEntity {
     template?: string;
 }
 
+export type RoomCardEntityConfig = string | RoomCardEntity;
+
 export interface EntityStyles {
     [key: string]: string | undefined;
     template?: string;
 }
 
 export interface RoomCardConfig extends LovelaceCardConfig {
-    info_entities?: RoomCardEntity[];
-    entities?: RoomCardEntity[];
+    info_entities?: RoomCardEntityConfig[];
+    entities?: RoomCardEntityConfig[];
     entity?: string;
     hide_title?: boolean;
     cards?: RoomCardLovelaceCardConfig[];
@@ -56,7 +58,7 @@ export enum RoomCardAlignment {
 }
 
 export interface RoomCardRow {
-    entities?: RoomCardEntity[];
+    entities?: RoomCardEntityConfig[];
     hide_if?: HideIfConfig;
     content_alignment?: RoomCardAlignment;
 }
