@@ -26,6 +26,22 @@ describe('visual editor configuration', () => {
         expect(ModernRoomCard.getStubConfig()).not.toHaveProperty('type');
     });
 
+    it('aligns the main pickers and renders info entities before regular entities', async () => {
+        const editor = createEditor();
+        editor.hass = { states: {} } as any;
+        document.body.append(editor);
+        await editor.updateComplete;
+
+        const pickers = editor.shadowRoot!.querySelectorAll('.main-picker');
+        const infoSection = editor.shadowRoot!.querySelector('.info-entities-section')!;
+        const entitiesSection = Array.from(editor.shadowRoot!.querySelectorAll('.section')).find((section) =>
+            section.querySelector('.section-header span')?.textContent?.includes('Entities'),
+        )!;
+
+        expect(pickers).toHaveLength(2);
+        expect(infoSection.compareDocumentPosition(entitiesSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
     it('normalizes strings only when the editor needs object fields', () => {
         expect(normalizeEntityConfig('light.office')).toEqual({ entity: 'light.office' });
         expect(normalizeEntityConfig({ entity: 'light.desk' } as any)).toEqual({ entity: 'light.desk' });

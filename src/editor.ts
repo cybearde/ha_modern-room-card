@@ -71,6 +71,10 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
             .grow {
                 flex: 1;
             }
+            .main-picker {
+                flex: 1 1 0;
+                min-width: 0;
+            }
             .section {
                 display: flex;
                 flex-direction: column;
@@ -122,7 +126,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
 
                 <div class="row">
                     <ha-entity-picker
-                        class="grow"
+                        class="main-picker"
                         .hass=${this.hass}
                         .label=${'Main entity (optional)'}
                         allow-custom-entity
@@ -130,6 +134,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                         @value-changed=${this._mainEntityChanged}
                     ></ha-entity-picker>
                     <ha-icon-picker
+                        class="main-picker"
                         .hass=${this.hass}
                         .label=${'Main icon'}
                         .value=${typeof this._config.icon === 'string' ? this._config.icon : ''}
@@ -176,6 +181,21 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                     )}
                 </div>
 
+                <div class="section info-entities-section">
+                    <div class="section-header">
+                        <span>Info entities (top-right)</span>
+                        <ha-button @click=${this._addInfoEntity}>Add</ha-button>
+                    </div>
+                    ${(this._config.info_entities ?? []).map((entity, index) =>
+                        this._renderEntityEditor(
+                            entity,
+                            this._entityHeader(entity, index),
+                            (patch) => this._updateEntity('info_entities', index, patch),
+                            () => this._removeEntity('info_entities', index),
+                        ),
+                    )}
+                </div>
+
                 <div class="section">
                     <div class="section-header">
                         <span>Entities</span>
@@ -190,21 +210,6 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                             this._entityHeader(entity, index),
                             (patch) => this._updateEntity('entities', index, patch),
                             () => this._removeEntity('entities', index),
-                        ),
-                    )}
-                </div>
-
-                <div class="section">
-                    <div class="section-header">
-                        <span>Info entities (top-right)</span>
-                        <ha-button @click=${this._addInfoEntity}>Add</ha-button>
-                    </div>
-                    ${(this._config.info_entities ?? []).map((entity, index) =>
-                        this._renderEntityEditor(
-                            entity,
-                            this._entityHeader(entity, index),
-                            (patch) => this._updateEntity('info_entities', index, patch),
-                            () => this._removeEntity('info_entities', index),
                         ),
                     )}
                 </div>
