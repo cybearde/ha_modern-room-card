@@ -18,8 +18,10 @@ const internals = (editor: ModernRoomCardEditor): any => editor;
 describe('visual editor configuration', () => {
     beforeEach(() => document.body.replaceChildren());
 
-    it('is exposed through the Home Assistant custom-card contract', () => {
-        expect(ModernRoomCard.getConfigElement().tagName.toLowerCase()).toBe('modern-room-card-editor');
+    it('is exposed through the Home Assistant custom-card contract', async () => {
+        const editor = await ModernRoomCard.getConfigElement();
+        expect(customElements.get('modern-room-card-editor')).toBe(ModernRoomCardEditor);
+        expect(editor.tagName.toLowerCase()).toBe('modern-room-card-editor');
         expect(ModernRoomCard.getStubConfig()).toEqual({ title: 'Living Room', entities: [] });
         expect(ModernRoomCard.getStubConfig()).not.toHaveProperty('type');
     });

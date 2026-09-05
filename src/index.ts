@@ -29,7 +29,10 @@ console.info(
 
 @customElement('modern-room-card')
 export default class ModernRoomCard extends LitElement {
-    public static getConfigElement(): LovelaceCardEditor {
+    public static async getConfigElement(): Promise<LovelaceCardEditor> {
+        // Match Home Assistant's asynchronous card-editor contract and make
+        // registration ordering explicit, even though the editor is bundled.
+        await customElements.whenDefined('modern-room-card-editor');
         return document.createElement('modern-room-card-editor') as LovelaceCardEditor;
     }
 
