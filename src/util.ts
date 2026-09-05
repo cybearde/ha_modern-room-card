@@ -7,6 +7,7 @@ import {
     HomeAssistantEntity,
     RoomCardConfig,
     RoomCardEntity,
+    RoomCardEntityConfig,
     RoomCardLovelaceCardConfig,
     RoomCardRow,
     RoomCardIcon,
@@ -42,10 +43,11 @@ export const getEntityIds = (config: RoomCardConfig): string[] => {
     return [...new Set(entities.filter((entity): entity is string => entity !== undefined && entity.length > 0))];
 };
 
-const getConditionEntities = (entities: RoomCardEntity[] | undefined): EntityCondition[] => {
+const getConditionEntities = (entities: RoomCardEntityConfig[] | undefined): EntityCondition[] => {
     let conditions: EntityCondition[] = [];
 
     entities?.forEach((entity) => {
+        if (typeof entity === 'string') return;
         const iconConditions = (entity?.icon as RoomCardIcon)?.conditions?.filter((x) => x.entity !== undefined);
         if (iconConditions) {
             conditions = conditions.concat(iconConditions);
@@ -64,7 +66,7 @@ const getConditionEntitiesFromConfig = (config: RoomCardConfig): string[] => {
     const entities = [config.entities, config.info_entities, ...rows];
     const flattendEntities = entities
         .flatMap((entities) => entities)
-        .filter((entity): entity is RoomCardEntity => entity !== undefined);
+        .filter((entity): entity is RoomCardEntityConfig => entity !== undefined);
     const conditionWithEntities = getConditionEntities(flattendEntities);
 
     return conditionWithEntities.filter((condition) => condition.entity).map((condition) => condition.entity) as string[];
