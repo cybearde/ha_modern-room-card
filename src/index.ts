@@ -1,6 +1,6 @@
 import { CSSResult, html, LitElement, PropertyValues, TemplateResult } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCard, LovelaceCardConfig, createThing } from 'custom-card-helpers';
+import { HomeAssistant, LovelaceCard, LovelaceCardConfig, LovelaceCardEditor, createThing } from 'custom-card-helpers';
 import { HassEntities } from 'home-assistant-js-websocket';
 
 import { checkConfig, entityStyles, renderEntitiesRow, renderInfoEntity, renderRows, renderTitle } from './entity';
@@ -24,16 +24,20 @@ console.info(
     preview: false,
     description:
         'A modernized room card for Home Assistant: show multiple entity states, attributes and icons in a single card.',
+    documentationURL: 'https://github.com/cybearde/ha_modern-room-card',
 });
 
 @customElement('modern-room-card')
 export default class ModernRoomCard extends LitElement {
-    public static getStubConfig(): RoomCardConfig {
+    public static getConfigElement(): LovelaceCardEditor {
+        return document.createElement('modern-room-card-editor') as LovelaceCardEditor;
+    }
+
+    public static getStubConfig(): Partial<RoomCardConfig> {
         return {
-            type: 'custom:modern-room-card',
             title: 'Living Room',
-            entities: [{ entity: '' }],
-        } as unknown as RoomCardConfig;
+            entities: [],
+        };
     }
 
     @property() monitoredStates: HassEntities = {};

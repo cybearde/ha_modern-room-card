@@ -53,7 +53,7 @@ export const entityIcon = (
     config: RoomCardEntity | RoomCardConfig,
     hass: HomeAssistant,
 ): string | EntityCondition | undefined => {
-    if ('icon' in config && (config.show_icon === undefined || config.show_icon === false)) {
+    if (config.icon !== undefined && (config.show_icon === undefined || config.show_icon === false)) {
         throw new Error(`Entity: ${config.entity} => Icon defined but show_icon is set to false or not defined. Please set show_icon to true`);
     }
 
@@ -347,7 +347,9 @@ export const renderRows = (rows: RoomCardRow[] | undefined, hass: HomeAssistant,
 
     const filteredRows = rows.filter((row) => !hideIfRow(row, hass));
 
-    return html`${filteredRows.map((row) => renderEntitiesRow(row, row.entities, hass, element))}`;
+    return html`${filteredRows.map((row) =>
+        renderEntitiesRow(row, row.entities as RoomCardEntity[] | undefined, hass, element),
+    )}`;
 };
 
 export const extractValue = (

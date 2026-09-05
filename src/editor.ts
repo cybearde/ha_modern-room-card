@@ -1,32 +1,33 @@
 import { css, CSSResult, html, LitElement, TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { ActionConfig, fireEvent, HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 import * as yaml from 'js-yaml';
-import { RoomCardAlignment, RoomCardConfig, RoomCardEntity, RoomCardRow } from './types';
+import { RoomCardAlignment, RoomCardConfig, RoomCardEntity, RoomCardEntityConfig, RoomCardRow } from './types';
 
-const ADVANCED_KEYS = ['cards', 'templates', 'card_styles', 'styles'] as const;
+export const normalizeEntityConfig = (entity: RoomCardEntityConfig | undefined): RoomCardEntity =>
+    (typeof entity === 'string' ? { entity } : entity ?? {}) as RoomCardEntity;
 
-const STRUCTURED_KEYS = [
-    'type',
-    'title',
-    'entity',
-    'icon',
-    'entities',
-    'info_entities',
-    'rows',
-    'hide_title',
-    'content_alignment',
-] as const;
+export const editorConfigToYaml = (config: Partial<RoomCardConfig>): string => {
+    const { entityIds: _entityIds, hass: _hass, ...serializable } = config;
+    return yaml.dump(serializable, { noRefs: true, lineWidth: 120 });
+};
 
-const pick = <T extends object, K extends keyof T>(obj: T, keys: readonly K[]): Partial<T> => {
-    const result: Partial<T> = {};
-    for (const key of keys) {
-        const value = obj[key];
-        if (value !== undefined) {
-            result[key] = value;
+export const editorConfigFromYaml = (raw: string): Partial<RoomCardConfig> => {
+    const parsed = raw.trim().length > 0 ? yaml.load(raw) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('The card configuration must be a YAML object.');
+    }
+
+    const config = parsed as Partial<RoomCardConfig>;
+    if (config.type !== undefined && config.type !== 'custom:modern-room-card') {
+        throw new Error("The type must be 'custom:modern-room-card'.");
+    }
+    for (const key of ['entities', 'info_entities', 'rows', 'cards', 'templates'] as const) {
+        if (config[key] !== undefined && !Array.isArray(config[key])) {
+            throw new Error(`${key} must be a list.`);
         }
     }
-    return result;
+    return { ...config, type: 'custom:modern-room-card' };
 };
 
 const eventTarget = (ev: Event): any => ev.currentTarget;
@@ -35,11 +36,11 @@ const eventTarget = (ev: Event): any => ev.currentTarget;
 export class ModernRoomCardEditor extends LitElement implements LovelaceCardEditor {
     @property() public hass!: HomeAssistant;
 
-    private _config!: Partial<RoomCardConfig>;
+    @state() private _config!: Partial<RoomCardConfig>;
 
-    private _advancedYaml = '';
+    @state() private _advancedYaml = '';
 
-    private _advancedError = false;
+    @state() private _advancedError = false;
 
     public setConfig(config: RoomCardConfig): void {
         this._config = {
@@ -47,7 +48,9 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
             info_entities: [],
             rows: [],
             ...config,
+            type: 'custom:modern-room-card',
         };
+        this._advancedError = false;
         this._deriveAdvancedYaml();
     }
 
@@ -80,6 +83,10 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                 justify-content: space-between;
                 font-size: 14px;
                 font-weight: 500;
+            }
+            .section-actions {
+                display: flex;
+                gap: 4px;
             }
             .entity-editor,
             .row-editor {
@@ -137,22 +144,45 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                             @change=${this._hideTitleChanged}
                         ></ha-switch>
                     </ha-formfield>
+                    <ha-formfield .label=${'Show main icon'}>
+                        <ha-switch
+                            .checked=${this._config.show_icon === true}
+                            @change=${this._mainShowIconChanged}
+                        ></ha-switch>
+                    </ha-formfield>
                     <ha-select
                         class="grow"
                         .label=${'Content alignment'}
                         .value=${(this._config.content_alignment as string) ?? 'left'}
                         @change=${this._alignmentChanged}
                     >
-                        <mwc-list-item value="left">Left</mwc-list-item>
-                        <mwc-list-item value="center">Center</mwc-list-item>
-                        <mwc-list-item value="right">Right</mwc-list-item>
+                        <ha-list-item value="left">Left</ha-list-item>
+                        <ha-list-item value="center">Center</ha-list-item>
+                        <ha-list-item value="right">Right</ha-list-item>
                     </ha-select>
+                </div>
+
+                <div class="row">
+                    ${this._renderActionSelect('Tap action', this._config.tap_action, (tap_action) =>
+                        this._updateConfig({ tap_action }),
+                    )}
+                    ${this._renderActionSelect('Hold action', this._config.hold_action, (hold_action) =>
+                        this._updateConfig({ hold_action }),
+                    )}
+                    ${this._renderActionSelect(
+                        'Double-tap action',
+                        this._config.double_tap_action,
+                        (double_tap_action) => this._updateConfig({ double_tap_action }),
+                    )}
                 </div>
 
                 <div class="section">
                     <div class="section-header">
                         <span>Entities</span>
-                        <ha-button @click=${this._addEntity}>Add entity</ha-button>
+                        <div class="section-actions">
+                            <ha-button @click=${this._addEntity}>Add entity</ha-button>
+                            <ha-button @click=${this._addEmptySlot}>Add empty slot</ha-button>
+                        </div>
                     </div>
                     ${(this._config.entities ?? []).map((entity, index) =>
                         this._renderEntityEditor(
@@ -188,25 +218,49 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                 </div>
 
                 <div class="section">
-                    <ha-expansion-panel .header=${'Advanced (YAML)'}>
+                    <ha-expansion-panel .header=${'Full configuration (YAML)'}>
                         <ha-code-editor
                             mode="yaml"
                             .error=${this._advancedError}
                             .value=${this._advancedYaml}
                             @value-changed=${this._advancedChanged}
                         ></ha-code-editor>
+                        <p>Invalid YAML stays local and is not applied to the card.</p>
                     </ha-expansion-panel>
                 </div>
             </div>
         `;
     }
 
+    private _renderActionSelect(
+        label: string,
+        action: ActionConfig | undefined,
+        onChange: (action: ActionConfig | undefined) => void,
+    ): TemplateResult {
+        return html`<ha-select
+            class="grow"
+            .label=${label}
+            .value=${action?.action ?? ''}
+            @change=${(ev: Event) =>
+                onChange(this._tapActionFromValue((eventTarget(ev) as HTMLSelectElement).value))}
+        >
+            <ha-list-item value="">None</ha-list-item>
+            <ha-list-item value="toggle">Toggle</ha-list-item>
+            <ha-list-item value="more-info">Show more-info</ha-list-item>
+            <ha-list-item value="navigate">Navigate</ha-list-item>
+            <ha-list-item value="url">Open URL</ha-list-item>
+            <ha-list-item value="perform-action">Perform action</ha-list-item>
+            <ha-list-item value="assist">Assist</ha-list-item>
+        </ha-select>`;
+    }
+
     private _renderEntityEditor(
-        entity: RoomCardEntity | undefined,
+        entityConfig: RoomCardEntityConfig | undefined,
         header: string,
         onPatch: (patch: Partial<RoomCardEntity>) => void,
         onRemove: () => void,
     ): TemplateResult {
+        const entity = normalizeEntityConfig(entityConfig);
         return html`
             <ha-expansion-panel .header=${header}>
                 <div class="entity-editor">
@@ -243,21 +297,15 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                         ></ha-icon-picker>
                     </div>
                     <div class="row">
-                        <ha-select
-                            class="grow"
-                            .label=${'Tap action'}
-                            .value=${entity?.tap_action?.action ?? ''}
-                            @change=${(ev: Event) =>
-                                onPatch({
-                                    tap_action: this._tapActionFromValue(
-                                        (eventTarget(ev) as HTMLSelectElement).value,
-                                    ),
-                                })}
-                        >
-                            <mwc-list-item value="">None</mwc-list-item>
-                            <mwc-list-item value="toggle">Toggle</mwc-list-item>
-                            <mwc-list-item value="more-info">Show more-info</mwc-list-item>
-                        </ha-select>
+                        ${this._renderActionSelect('Tap action', entity.tap_action, (tap_action) =>
+                            onPatch({ tap_action }),
+                        )}
+                        ${this._renderActionSelect('Hold action', entity.hold_action, (hold_action) =>
+                            onPatch({ hold_action }),
+                        )}
+                        ${this._renderActionSelect('Double-tap action', entity.double_tap_action, (double_tap_action) =>
+                            onPatch({ double_tap_action }),
+                        )}
                     </div>
                     <div class="options">
                         <ha-formfield .label=${'Show name'}>
@@ -342,9 +390,9 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                                         .value as RoomCardAlignment,
                                 })}
                         >
-                            <mwc-list-item value="left">Left</mwc-list-item>
-                            <mwc-list-item value="center">Center</mwc-list-item>
-                            <mwc-list-item value="right">Right</mwc-list-item>
+                            <ha-list-item value="left">Left</ha-list-item>
+                            <ha-list-item value="center">Center</ha-list-item>
+                            <ha-list-item value="right">Right</ha-list-item>
                         </ha-select>
                         <ha-icon-button .label=${'Delete row'} @click=${() => this._removeRow(rowIndex)}>
                             <ha-icon icon="mdi:delete"></ha-icon>
@@ -358,68 +406,76 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                             () => this._removeRowEntity(rowIndex, entityIndex),
                         ),
                     )}
-                    <ha-button @click=${() => this._addRowEntity(rowIndex)}>Add entity</ha-button>
+                    <div class="section-actions">
+                        <ha-button @click=${() => this._addRowEntity(rowIndex)}>Add entity</ha-button>
+                        <ha-button @click=${() => this._addRowEmptySlot(rowIndex)}>Add empty slot</ha-button>
+                    </div>
                 </div>
             </ha-expansion-panel>
         `;
     }
 
-    private _entityHeader(entity: RoomCardEntity | undefined, index: number): string {
-        if (!entity || !entity.entity) {
-            return `Entity ${index + 1}`;
+    private _entityHeader(entityConfig: RoomCardEntityConfig | undefined, index: number): string {
+        const entity = normalizeEntityConfig(entityConfig);
+        if (!entity.entity) {
+            return `Empty slot ${index + 1}`;
         }
         const stateObj = this.hass.states[entity.entity];
         return stateObj?.attributes.friendly_name || entity.entity;
     }
 
     private _fire(): void {
-        if (!this.hass) {
-            return;
-        }
         fireEvent(this, 'config-changed', { config: { ...this._config, type: 'custom:modern-room-card' } });
     }
 
     private _deriveAdvancedYaml(): void {
-        const advanced = pick(this._config, ADVANCED_KEYS);
-        this._advancedYaml = Object.keys(advanced).length > 0 ? yaml.dump(advanced) : '';
+        this._advancedYaml = editorConfigToYaml(this._config);
+    }
+
+    private _updateConfig(patch: Partial<RoomCardConfig>): void {
+        this._config = { ...this._config, ...patch, type: 'custom:modern-room-card' };
+        this._advancedError = false;
+        this._deriveAdvancedYaml();
+        this._fire();
     }
 
     private _titleChanged(ev: Event): void {
-        this._config = { ...this._config, title: (eventTarget(ev) as HTMLInputElement).value || undefined };
-        this._fire();
+        this._updateConfig({ title: (eventTarget(ev) as HTMLInputElement).value || undefined });
     }
 
     private _mainEntityChanged(ev: Event): void {
-        this._config = {
-            ...this._config,
+        this._updateConfig({
             entity: ((ev as CustomEvent).detail.value as string) || undefined,
-        };
-        this._fire();
+        });
     }
 
     private _mainIconChanged(ev: Event): void {
-        this._config = {
-            ...this._config,
+        this._updateConfig({
             icon: ((ev as CustomEvent).detail.value as string) || undefined,
-        };
-        this._fire();
+        });
     }
 
     private _hideTitleChanged(ev: Event): void {
-        this._config = { ...this._config, hide_title: (eventTarget(ev) as HTMLInputElement).checked };
-        this._fire();
+        this._updateConfig({ hide_title: (eventTarget(ev) as HTMLInputElement).checked });
+    }
+
+    private _mainShowIconChanged(ev: Event): void {
+        this._updateConfig({ show_icon: (eventTarget(ev) as HTMLInputElement).checked });
     }
 
     private _alignmentChanged(ev: Event): void {
-        this._config = {
-            ...this._config,
+        this._updateConfig({
             content_alignment: (eventTarget(ev) as HTMLSelectElement).value as RoomCardAlignment,
-        };
-        this._fire();
+        });
     }
 
     private _addEntity(): void {
         this._addEntityList('entities');
+    }
+
+    private _addEmptySlot(): void {
+        const list = [...(this._config.entities ?? []), {} as RoomCardEntity];
+        this._updateConfig({ entities: list });
     }
 
     private _addInfoEntity(): void {
@@ -429,8 +485,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
     private _addEntityList(listKey: 'entities' | 'info_entities'): void {
         const list = [...(this._config[listKey] ?? [])];
         list.push({} as RoomCardEntity);
-        this._config = { ...this._config, [listKey]: list };
-        this._fire();
+        this._updateConfig({ [listKey]: list });
     }
 
     private _updateEntity(
@@ -439,37 +494,32 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
         patch: Partial<RoomCardEntity>,
     ): void {
         const list = [...(this._config[listKey] ?? [])];
-        list[index] = { ...list[index], ...patch };
-        this._config = { ...this._config, [listKey]: list };
-        this._fire();
+        list[index] = { ...normalizeEntityConfig(list[index]), ...patch };
+        this._updateConfig({ [listKey]: list });
     }
 
     private _removeEntity(listKey: 'entities' | 'info_entities', index: number): void {
         const list = [...(this._config[listKey] ?? [])];
         list.splice(index, 1);
-        this._config = { ...this._config, [listKey]: list };
-        this._fire();
+        this._updateConfig({ [listKey]: list });
     }
 
     private _addRow(): void {
         const rows = [...(this._config.rows ?? [])];
         rows.push({ entities: [{} as RoomCardEntity] });
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
     }
 
     private _updateRow(rowIndex: number, patch: Partial<RoomCardRow>): void {
         const rows = [...(this._config.rows ?? [])];
         rows[rowIndex] = { entities: [], ...rows[rowIndex], ...patch };
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
     }
 
     private _removeRow(rowIndex: number): void {
         const rows = [...(this._config.rows ?? [])];
         rows.splice(rowIndex, 1);
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
     }
 
     private _addRowEntity(rowIndex: number): void {
@@ -479,8 +529,15 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
         entities.push({} as RoomCardEntity);
         row.entities = entities;
         rows[rowIndex] = row;
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
+    }
+
+    private _addRowEmptySlot(rowIndex: number): void {
+        const rows = [...(this._config.rows ?? [])];
+        const row = { entities: [], ...rows[rowIndex] };
+        row.entities = [...(row.entities ?? []), {} as RoomCardEntity];
+        rows[rowIndex] = row;
+        this._updateConfig({ rows });
     }
 
     private _updateRowEntity(
@@ -491,11 +548,10 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
         const rows = [...(this._config.rows ?? [])];
         const row = { entities: [], ...rows[rowIndex] };
         const entities = row.entities ? [...row.entities] : [];
-        entities[entityIndex] = { ...entities[entityIndex], ...patch };
+        entities[entityIndex] = { ...normalizeEntityConfig(entities[entityIndex]), ...patch };
         row.entities = entities;
         rows[rowIndex] = row;
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
     }
 
     private _removeRowEntity(rowIndex: number, entityIndex: number): void {
@@ -507,8 +563,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
             row.entities = entities;
             rows[rowIndex] = row;
         }
-        this._config = { ...this._config, rows };
-        this._fire();
+        this._updateConfig({ rows });
     }
 
     private _advancedChanged(ev: Event): void {
@@ -516,17 +571,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
         this._advancedYaml = raw;
 
         try {
-            const parsed = raw.trim().length > 0 ? yaml.load(raw) : {};
-            const advanced =
-                parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-                    ? (parsed as Partial<RoomCardConfig>)
-                    : {};
-
-            this._config = {
-                ...this._config,
-                ...pick(advanced, ADVANCED_KEYS),
-                ...pick(this._config, STRUCTURED_KEYS),
-            };
+            this._config = editorConfigFromYaml(raw);
             this._advancedError = false;
             this._fire();
         } catch {
