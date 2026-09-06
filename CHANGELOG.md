@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented here.
 
+## Unreleased
+
+- Improved compact-row icon alignment by reducing the default entity top offset from -12 px to -4 px.
+
 ## 1.0.0 - 2026-09-06
 
 - Fixed info-entity gestures also activating the header and delegated actions to Home Assistant for current action and confirmation support.

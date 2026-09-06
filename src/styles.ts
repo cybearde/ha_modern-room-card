@@ -251,7 +251,7 @@ export const style = css`
         );
         margin-inline-end: var(--modern-room-card-compact-entity-gap, -8px);
         position: relative;
-        top: var(--modern-room-card-compact-entity-top, -12px);
+        top: var(--modern-room-card-compact-entity-top, -4px);
     }
 
     ha-card.compact .entities-row .entity:last-of-type {
