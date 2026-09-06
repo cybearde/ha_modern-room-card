@@ -556,6 +556,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                             this._entityHeader(entity, index),
                             (patch) => this._updateEntity('info_entities', index, patch),
                             () => this._removeEntity('info_entities', index),
+                            true,
                         ),
                     )}
                 </div>
@@ -758,6 +759,7 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
         header: string,
         onPatch: (patch: Partial<RoomCardEntity>) => void,
         onRemove: () => void,
+        showInfoIconOption = false,
     ): TemplateResult {
         const entity = normalizeEntityConfig(entityConfig);
         return html`
@@ -837,6 +839,16 @@ export class ModernRoomCardEditor extends LitElement implements LovelaceCardEdit
                                     onPatch({ show_state: (eventTarget(ev) as HTMLInputElement).checked })}
                             ></ha-switch>
                         </ha-formfield>
+                        ${showInfoIconOption
+                            ? html`<ha-formfield .label=${'Show icon'}>
+                                  <ha-switch
+                                      class="info-show-icon"
+                                      .checked=${entity?.show_icon === true}
+                                      @change=${(ev: Event) =>
+                                          onPatch({ show_icon: (eventTarget(ev) as HTMLInputElement).checked })}
+                                  ></ha-switch>
+                              </ha-formfield>`
+                            : ''}
                         <ha-formfield .label=${'Toggle'}>
                             <ha-switch
                                 .checked=${entity?.toggle === true}

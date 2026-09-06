@@ -111,6 +111,43 @@ describe('visual editor configuration', () => {
         );
     });
 
+    it('edits show_icon for info entities without adding the control to row entities', async () => {
+        const editor = createEditor({
+            info_entities: [{ entity: 'sensor.temperature', show_icon: true }],
+            rows: [{ entities: ['light.office'] }],
+        });
+        editor.hass = {
+            states: {
+                'sensor.temperature': {
+                    entity_id: 'sensor.temperature',
+                    state: '21',
+                    attributes: { friendly_name: 'Temperature' },
+                },
+                'light.office': {
+                    entity_id: 'light.office',
+                    state: 'on',
+                    attributes: { friendly_name: 'Office light' },
+                },
+            },
+        } as any;
+        document.body.append(editor);
+        await editor.updateComplete;
+
+        const toggle = editor.shadowRoot!.querySelector(
+            '.info-entities-section .info-show-icon',
+        ) as HTMLElement & { checked: boolean };
+        expect(toggle.checked).toBe(true);
+        expect(editor.shadowRoot!.querySelector('.rows-section .info-show-icon')).toBeNull();
+
+        toggle.checked = false;
+        toggle.dispatchEvent(new Event('change'));
+
+        expect(internals(editor)._config.info_entities[0]).toEqual({
+            entity: 'sensor.temperature',
+            show_icon: false,
+        });
+    });
+
     it('replaces picker state when the same editor instance is used for another card', async () => {
         const editor = createEditor({
             entity: 'light.office',
