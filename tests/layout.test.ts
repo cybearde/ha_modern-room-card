@@ -39,7 +39,7 @@ describe('native layout options', () => {
         expect(ModernRoomCard.styles.cssText).not.toContain('min-height: 48px');
         expect(ModernRoomCard.styles.cssText).toContain('padding: var(--modern-room-card-compact-padding, 8px)');
         expect(ModernRoomCard.styles.cssText).toContain(
-            'top: var(--modern-room-card-compact-entity-top, -4px)',
+            'top: var(--modern-room-card-compact-entity-top, -0px)',
         );
         expect(ModernRoomCard.styles.cssText).not.toContain(
             'font-size: calc(30px * var(--modern-room-card-content-scale))',
