@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here.
 
-## Unreleased
+## 1.0.1 - 2026-09-06
 
 - Improved compact-row icon alignment by reducing the default entity top offset from -12 px to -4 px.
 
