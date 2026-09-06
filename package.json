@@ -1,0 +1,49 @@
+{
+  "name": "modern-room-card",
+  "version": "1.0.0",
+  "description": "A flexible room card for Home Assistant's Lovelace UI",
+  "keywords": [
+    "home-assistant",
+    "homeassistant",
+    "lovelace",
+    "custom-cards",
+    "multiple",
+    "entity",
+    "row"
+  ],
+  "module": "dist/modern-room-card.js",
+  "files": [
+    "dist/modern-room-card.js"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack -c webpack.config.js",
+    "check": "npm run typecheck && npm test && npm run build",
+    "dev:watch": "webpack -c webpack.config.js --watch --mode development",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "test": "vitest run",
+    "watch": "webpack -c webpack.config.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "custom-card-helpers": "^2.0.0",
+    "home-assistant-js-websocket": "^9.6.0",
+    "js-yaml": "^5.4.1",
+    "lit": "^3.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/js-yaml": "^4.0.9",
+    "jsdom": "^30.0.1",
+    "minify-html-literals-loader": "^1.1.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "vitest": "^5.0.0",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^7.2.3"
+  }
+}
