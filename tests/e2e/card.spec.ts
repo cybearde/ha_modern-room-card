@@ -14,11 +14,13 @@ const openTestDashboard = async (page: Page) => {
 test('loads the development dashboard and renders the maintained card matrix', async ({ page }) => {
     await openTestDashboard(page);
 
-    await expect(page.locator('modern-room-card')).toHaveCount(4);
+    await expect(page.locator('modern-room-card')).toHaveCount(7);
     await expect(page.locator('modern-room-card').first()).toContainText('Living room');
     await expect(page.locator('modern-room-card').first()).toContainText('21.5');
     const compactFixture = page.locator('modern-room-card').filter({ hasText: 'Right-aligned compact room' });
     await expect(compactFixture.locator('ha-card')).toHaveClass(/compact/);
+    await expect(page.locator('modern-room-card').filter({ hasText: 'Conditional appearance' })).toBeVisible();
+    await expect(page.locator('modern-room-card').filter({ hasText: 'Nested card content' })).toBeVisible();
 });
 
 test('keeps the card usable at a narrow viewport', async ({ page }) => {

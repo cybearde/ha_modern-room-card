@@ -515,6 +515,17 @@ describe('visual editor configuration', () => {
         expect(editorConfigFromYaml(editorConfigToYaml(source))).toEqual(source);
     });
 
+    it('preserves host-level card_mod YAML through advanced editor serialization', () => {
+        const source = {
+            type: 'custom:modern-room-card',
+            entity: 'light.test',
+            rows: [],
+            card_mod: { style: ':host { --test-color: red; }' },
+        } as any;
+
+        expect(editorConfigFromYaml(editorConfigToYaml(source))).toMatchObject({ card_mod: source.card_mod });
+    });
+
     it('rejects invalid YAML and does not apply it', () => {
         const editor = createEditor({ title: 'Before' });
         internals(editor)._advancedChanged(new CustomEvent('value-changed', { detail: { value: 'title: [bad' } }));

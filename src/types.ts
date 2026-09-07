@@ -46,6 +46,8 @@ export interface EntityStyles {
 }
 
 export interface RoomCardConfig extends LovelaceCardConfig {
+    /** Home Assistant card-mod configuration; consumed by the host integration. */
+    card_mod?: unknown;
     info_entities?: RoomCardEntityConfig[];
     entity?: string;
     hide_title?: boolean;
