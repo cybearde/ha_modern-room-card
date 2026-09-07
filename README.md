@@ -3,12 +3,12 @@
 A flexible, maintained room card for Home Assistant dashboards. Combine a room title, a state-aware main entity,
 header information, configurable entity rows, actions, and conditional appearance in one responsive card.
 
-![Modern Room Card desktop layout](images/modern-room-card-desktop.jpg)
+![Modern Room Card showcase](images/modern-room-card-sample.png)
 
 <details>
-<summary>Mobile layout</summary>
+<summary>Visual editor</summary>
 
-![Modern Room Card mobile layout](images/modern-room-card-mobile.jpg)
+![Modern Room Card visual editor](images/modern-room-card-editor.png)
 
 </details>
 
