@@ -269,7 +269,7 @@ export const style = css`
             var(--modern-room-card-compact-row-icon-left, -2px)
         );
         position: relative;
-        top: var(--modern-room-card-compact-row-icon-top, 4px);
+        top: var(--modern-room-card-compact-row-icon-top, -2px);
     }
 
 `;

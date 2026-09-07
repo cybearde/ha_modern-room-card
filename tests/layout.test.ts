@@ -47,6 +47,9 @@ describe('native layout options', () => {
         expect(ModernRoomCard.styles.cssText).toContain(
             'top: var(--modern-room-card-compact-entity-top, -0px)',
         );
+        expect(ModernRoomCard.styles.cssText).toContain(
+            'top: var(--modern-room-card-compact-row-icon-top, -2px)',
+        );
         expect(ModernRoomCard.styles.cssText).not.toContain(
             'font-size: calc(30px * var(--modern-room-card-content-scale))',
         );
