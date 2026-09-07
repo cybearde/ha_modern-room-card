@@ -3,6 +3,32 @@ import { resolve } from 'node:path';
 
 test.beforeEach(async ({ page }) => {
     await page.setContent('<body style="color:rgb(20,20,20); --primary-text-color:rgb(240,240,240)"></body>');
+    await page.evaluate(() => {
+        customElements.define(
+            'state-badge',
+            class extends HTMLElement {
+                constructor() {
+                    super();
+                    const root = this.attachShadow({ mode: 'open' });
+                    root.innerHTML = `<style>
+                        :host {
+                            align-items: center;
+                            display: inline-flex;
+                            height: 40px;
+                            justify-content: center;
+                            position: relative;
+                            width: 40px;
+                        }
+                        .rendered-icon {
+                            display: block;
+                            height: var(--mdc-icon-size, 24px);
+                            width: var(--mdc-icon-size, 24px);
+                        }
+                    </style><span class="rendered-icon"></span>`;
+                }
+            },
+        );
+    });
     await page.addScriptTag({ path: resolve('dist/modern-room-card.js') });
     await page.evaluate(async () => {
         const card = document.createElement('modern-room-card') as any;
@@ -47,7 +73,7 @@ test('centers an info icon at the same vertical position as info text', async ({
     });
 
     const textBox = await page.locator('.entities-info-row .entity:not(.icon-entity)').boundingBox();
-    const iconBox = await page.locator('.entities-info-row .icon-entity .icon-small').boundingBox();
+    const iconBox = await page.locator('.entities-info-row .icon-entity state-badge .rendered-icon').boundingBox();
     expect(textBox).not.toBeNull();
     expect(iconBox).not.toBeNull();
 

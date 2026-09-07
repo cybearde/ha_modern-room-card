@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented here.
 
+## 1.0.3 - 2026-09-07
+
+- Fixed icon-only info entities being vertically offset by an override of Home Assistant's state-badge flex layout.
+
 ## 1.0.2 - 2026-09-07
 
 - Corrected the vertical alignment of icon-only info entities by removing inline baseline spacing.

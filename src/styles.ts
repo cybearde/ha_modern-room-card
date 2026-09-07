@@ -55,7 +55,6 @@ export const style = css`
     }
 
     .icon-small {
-        display: inline-block;
         height: calc(40px * var(--modern-room-card-content-scale));
         width: calc(40px * var(--modern-room-card-content-scale));
         --mdc-icon-size: calc(24px * var(--modern-room-card-content-scale));
