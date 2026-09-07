@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented here.
 
+## 1.0.2 - 2026-09-07
+
+- Corrected the vertical alignment of icon-only info entities by removing inline baseline spacing.
+
 ## 1.0.1 - 2026-09-06
 
 - Improved compact-row icon alignment by reducing the default entity top offset from -12 px to zero.

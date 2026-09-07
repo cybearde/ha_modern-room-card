@@ -37,6 +37,25 @@ test('isolates real pointer and keyboard input on info entities', async ({ page,
     expect(actions.every((entry: any) => entry.config.tap_action.action === 'more-info')).toBe(true);
 });
 
+test('centers an info icon at the same vertical position as info text', async ({ page }) => {
+    await page.locator('modern-room-card').evaluate(async (card: any) => {
+        card.setConfig({
+            ...card.config,
+            info_entities: [{ entity: 'light.test' }, { entity: 'light.test', show_icon: true }],
+        });
+        await card.updateComplete;
+    });
+
+    const textBox = await page.locator('.entities-info-row .entity:not(.icon-entity)').boundingBox();
+    const iconBox = await page.locator('.entities-info-row .icon-entity .icon-small').boundingBox();
+    expect(textBox).not.toBeNull();
+    expect(iconBox).not.toBeNull();
+
+    const textCenter = textBox!.y + textBox!.height / 2;
+    const iconCenter = iconBox!.y + iconBox!.height / 2;
+    expect(Math.abs(textCenter - iconCenter)).toBeLessThanOrEqual(0.5);
+});
+
 test('uses current double-tap options and retains delayed taps after moving away', async ({ page }) => {
     await page.locator('modern-room-card').evaluate(async (card: any) => {
         card.setConfig({ ...card.config, double_tap_action: { action: 'more-info' } });

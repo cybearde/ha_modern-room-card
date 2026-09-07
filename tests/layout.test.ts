@@ -36,6 +36,9 @@ describe('native layout options', () => {
         expect(ModernRoomCard.styles.cssText).toContain('margin-inline-start: auto');
         expect(ModernRoomCard.styles.cssText).toContain('line-height: 1');
         expect(ModernRoomCard.styles.cssText).toContain('margin-inline-end: 4px');
+        expect(ModernRoomCard.styles.cssText).toMatch(
+            /\.entities-info-row \.entity\.icon-entity\s*\{[^}]*align-items: center;[^}]*display: inline-flex;/,
+        );
         expect(ModernRoomCard.styles.cssText).not.toContain('min-height: 48px');
         expect(ModernRoomCard.styles.cssText).toContain('padding: var(--modern-room-card-compact-padding, 8px)');
         expect(ModernRoomCard.styles.cssText).toContain(

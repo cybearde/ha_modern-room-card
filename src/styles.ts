@@ -144,6 +144,8 @@ export const style = css`
     }
 
     .entities-info-row .entity.icon-entity {
+        align-items: center;
+        display: inline-flex;
         margin-inline-end: 0;
     }
 
