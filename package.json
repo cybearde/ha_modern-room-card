@@ -1,6 +1,6 @@
 {
   "name": "modern-room-card",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A flexible room card for Home Assistant's Lovelace UI",
   "keywords": [
     "home-assistant",
